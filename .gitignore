@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.sln
+.vs
+.vsconfig
+Binaries
+DerivedDataCache
+Intermediate
+Saved
+Build
+.DS_Store
