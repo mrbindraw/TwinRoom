@@ -1,0 +1,119 @@
+"""
+room_publisher.py
+-----------------
+building/floor1/room1/temperature   -> temp, °C
+building/floor1/room1/occupancy     -> "true" / "false"
+building/floor1/room1/lamp          -> "true" / "false"
+
+Launch:
+    1) mosquitto -v
+    2) python room_publisher.py
+"""
+
+import paho.mqtt.client as mqtt
+import random
+import time
+import math
+from datetime import datetime
+
+
+BROKER = "localhost"
+PORT = 1883
+BASE_TOPIC = "building/floor1/room1"
+PUBLISH_INTERVAL = 2.0 # sec
+
+last = {"temperature": None, "occupancy": None, "lamp": None}
+
+# lamp logic: stays on while the room is occupied, and then LAMP_TIMEOUT seconds after
+LAMP_TIMEOUT = 20.0
+last_occupied_time = 0.0
+
+
+def now_str():
+    return datetime.now().strftime("%H:%M:%S")
+
+
+def log_change(param, old, new):
+    ts = now_str()
+    if param == "temperature":
+        print(f"[{ts}] Temperature: {old}°C → {new}°C")
+    elif param == "occupancy":
+        status = "OCCUPIED" if new else "EMPTY"
+        print(f"[{ts}] Occupancy:   {status}")
+    elif param == "lamp":
+        state = "ON" if new else "OFF"
+        extra = "" if new else "  (timeout after empty)"
+        print(f"[{ts}] Lamp:        {('OFF' if old else 'ON')} → {('ON' if new else 'OFF')}{extra}")
+
+
+# ---- Callbacks ----
+def on_connect(client, userdata, flags, rc, properties=None):
+    if rc == 0:
+        print(f"[{now_str()}] Connected to MQTT broker at {BROKER}:{PORT}")
+        print(f"[{now_str()}] Publishing to: {BASE_TOPIC}/<parameter> every {PUBLISH_INTERVAL}s\n")
+    else:
+        print(f"[{now_str()}] Connection failed (code {rc})")
+
+
+def on_disconnect(client, userdata, rc, properties=None):
+    print(f"[{now_str()}] Disconnected from broker (code {rc})")
+
+
+def main():
+    client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2, client_id="room1-sensor-sim")
+    #client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+
+    try:
+        client.connect(BROKER, PORT, keepalive=60)
+    except Exception as e:
+        print(f"[{now_str()}] Could not connect to broker: {e}")
+        print("Please, check:  mosquitto -v")
+        return
+
+    client.loop_start()
+    start = time.time()
+    global last_occupied_time
+
+    try:
+        while True:
+            t = time.time() - start
+
+            temperature = round(22 + 2 * math.sin(t / 30) + random.uniform(-0.2, 0.2), 1)
+            occupancy = (int(t / 10) % 2 == 0) # switches every 10 sec
+
+            if occupancy:
+                last_occupied_time = t
+                lamp = True
+            else:
+                # the lamp is still on for LAMP_TIMEOUT seconds after release
+                lamp = (t - last_occupied_time) < LAMP_TIMEOUT
+
+            client.publish(f"{BASE_TOPIC}/temperature", str(temperature), qos=1, retain=True)
+            client.publish(f"{BASE_TOPIC}/occupancy", str(occupancy).lower(), qos=1, retain=True)
+            client.publish(f"{BASE_TOPIC}/lamp", str(lamp).lower(), qos=1, retain=True)
+
+            # --- print logs ---
+            if last["temperature"] is not None and abs(temperature - last["temperature"]) > 0.2:
+                log_change("temperature", last["temperature"], temperature)
+            if last["occupancy"] is not None and occupancy != last["occupancy"]:
+                log_change("occupancy", last["occupancy"], occupancy)
+            if last["lamp"] is not None and lamp != last["lamp"]:
+                log_change("lamp", last["lamp"], lamp)
+
+            last["temperature"] = temperature
+            last["occupancy"] = occupancy
+            last["lamp"] = lamp
+
+            time.sleep(PUBLISH_INTERVAL)
+
+    except KeyboardInterrupt:
+        print(f"\n[{now_str()}] Stopping publisher...")
+    finally:
+        client.loop_stop()
+        client.disconnect()
+
+
+if __name__ == "__main__":
+    main()
