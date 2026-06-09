@@ -24,14 +24,24 @@ Open `http://localhost:8000/room` in your browser to verify it works.
 3. Launch the UE project
 
 ## Testing MQTT-broker:
-1. Open a terminal and run the command:
+1. Switch to the `TwinRoom/MockServer` directory and run in terminal:
 ```
-mosquitto -v
+sh make_certs.sh
+```
+Remark: If MinGW, POSIX-to-Windows path conversion, add `MSYS_NO_PATHCONV=1` sh make_certs.sh
+
+2. Open new terminal and run:
+```
+mosquitto -c mosquitto.conf -v
 ```
 
-2. Switch to the `TwinRoom/MockServer` directory and run:
+3. Open new terminal and run:
 ```
 python room_publisher.py
+```
+
+4. Open new terminal and run:
+```
 python room_subscriber.py
 ```
 
