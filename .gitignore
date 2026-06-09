@@ -10,3 +10,8 @@ Intermediate
 Saved
 Build
 .DS_Store
+certs/
+*.crt
+*.csr
+*.key
+*.srl
