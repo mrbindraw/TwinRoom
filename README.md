@@ -30,17 +30,24 @@ sh make_certs.sh
 ```
 Remark: If MinGW, POSIX-to-Windows path conversion, add `MSYS_NO_PATHCONV=1` sh make_certs.sh
 
-2. Open new terminal and run:
+2. Create `.env` file from `.env.example`
+
+3. Open new terminal and run:
+```
+make_users.sh
+```
+
+4. Open new terminal and run:
 ```
 mosquitto -c mosquitto.conf -v
 ```
 
-3. Open new terminal and run:
+5. Open new terminal and run:
 ```
 python room_publisher.py
 ```
 
-4. Open new terminal and run:
+6. Open new terminal and run:
 ```
 python room_subscriber.py
 ```
