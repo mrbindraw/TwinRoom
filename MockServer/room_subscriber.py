@@ -8,14 +8,21 @@ Launch:
 
 import paho.mqtt.client as mqtt
 import os
+import sys
 from datetime import datetime
+from dotenv import load_dotenv
 
-BROKER = "localhost"
-PORT = 8883
+# Load secrets and settings from .env
+load_dotenv()
+
+BROKER = os.getenv("MQTT_BROKER", "localhost")
+PORT = int(os.getenv("MQTT_PORT", "8883"))
 # '#' = wildcard, get all topics
 SUBSCRIBE_TOPIC = "building/floor1/room1/#"
 CA_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "certs", "ca.crt")
 
+USERNAME = os.getenv("TWIN_USERNAME")
+PASSWORD = os.getenv("TWIN_PASSWORD")
 
 def now_str():
     return datetime.now().strftime("%H:%M:%S")
@@ -23,7 +30,7 @@ def now_str():
 
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
-        print(f"[{now_str()}] Connected. Listening on: {SUBSCRIBE_TOPIC}\n")
+        print(f"[{now_str()}] Connected over TLS as '{USERNAME}'. Listening on {SUBSCRIBE_TOPIC}\n")
         client.subscribe(SUBSCRIBE_TOPIC, qos=1)
     else:
         print(f"[{now_str()}] Connection failed (code {rc})")
@@ -36,6 +43,11 @@ def on_message(client, userdata, msg):
 
 
 def main():
+    if not USERNAME or not PASSWORD:
+        print(f"[{now_str()}] Missing credentials. Copy .env.example to .env and set "
+              f"TWIN_USERNAME / TWIN_PASSWORD.")
+        sys.exit(1)
+    
     if not os.path.exists(CA_CERT):
         print(f"[{now_str()}] CA certificate not found: {CA_CERT}")
         return
@@ -43,6 +55,8 @@ def main():
     client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2, client_id="test-subscriber")
     client.on_connect = on_connect
     client.on_message = on_message
+    
+    client.username_pw_set(USERNAME, PASSWORD)
     client.tls_set(ca_certs=CA_CERT)
     
     try:

@@ -15,14 +15,21 @@ import random
 import time
 import math
 import os
+import sys
 from datetime import datetime
+from dotenv import load_dotenv
 
+# Load secrets and settings from .env into environment variables
+load_dotenv()
 
-BROKER = "localhost"
-PORT = 8883
+BROKER = os.getenv("MQTT_BROKER", "localhost")
+PORT = int(os.getenv("MQTT_PORT", "8883"))
 BASE_TOPIC = "building/floor1/room1"
 PUBLISH_INTERVAL = 2.0 # sec
 CA_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "certs", "ca.crt")
+
+USERNAME = os.getenv("SENSOR_USERNAME")
+PASSWORD = os.getenv("SENSOR_PASSWORD")
 
 last = {"temperature": None, "occupancy": None, "lamp": None}
 
@@ -51,7 +58,7 @@ def log_change(param, old, new):
 # ---- Callbacks ----
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
-        print(f"[{now_str()}] Connected to MQTT broker at {BROKER}:{PORT}")
+        print(f"[{now_str()}] Connected over TLS as '{USERNAME}' to {BROKER}:{PORT}")
         print(f"[{now_str()}] Publishing to: {BASE_TOPIC}/<parameter> every {PUBLISH_INTERVAL}s\n")
     else:
         print(f"[{now_str()}] Connection failed (code {rc})")
@@ -62,6 +69,12 @@ def on_disconnect(client, userdata, rc, properties=None):
 
 
 def main():
+    # Fail early with a clear message if secrets or certs are missing
+    if not USERNAME or not PASSWORD:
+        print(f"[{now_str()}] Missing credentials. Copy .env.example to .env and set "
+              f"SENSOR_USERNAME / SENSOR_PASSWORD.")
+        sys.exit(1)
+    
     if not os.path.exists(CA_CERT):
         print(f"[{now_str()}] CA certificate not found: {CA_CERT}")
         return
@@ -70,6 +83,8 @@ def main():
     #client = mqtt.Client()
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
+    
+    client.username_pw_set(USERNAME, PASSWORD)
     client.tls_set(ca_certs=CA_CERT)
 
     try:
