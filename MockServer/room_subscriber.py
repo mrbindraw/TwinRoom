@@ -40,7 +40,7 @@ def main():
         print(f"[{now_str()}] CA certificate not found: {CA_CERT}")
         return
     
-    client = mqtt.Client(client_id="test-subscriber")
+    client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2, client_id="test-subscriber")
     client.on_connect = on_connect
     client.on_message = on_message
     client.tls_set(ca_certs=CA_CERT)
