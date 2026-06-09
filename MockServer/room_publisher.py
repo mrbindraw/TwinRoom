@@ -14,13 +14,15 @@ import paho.mqtt.client as mqtt
 import random
 import time
 import math
+import os
 from datetime import datetime
 
 
 BROKER = "localhost"
-PORT = 1883
+PORT = 8883
 BASE_TOPIC = "building/floor1/room1"
 PUBLISH_INTERVAL = 2.0 # sec
+CA_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "certs", "ca.crt")
 
 last = {"temperature": None, "occupancy": None, "lamp": None}
 
@@ -60,10 +62,15 @@ def on_disconnect(client, userdata, rc, properties=None):
 
 
 def main():
+    if not os.path.exists(CA_CERT):
+        print(f"[{now_str()}] CA certificate not found: {CA_CERT}")
+        return
+    
     client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2, client_id="room1-sensor-sim")
     #client = mqtt.Client()
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
+    client.tls_set(ca_certs=CA_CERT)
 
     try:
         client.connect(BROKER, PORT, keepalive=60)

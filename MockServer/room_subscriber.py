@@ -7,12 +7,14 @@ Launch:
 """
 
 import paho.mqtt.client as mqtt
+import os
 from datetime import datetime
 
 BROKER = "localhost"
-PORT = 1883
+PORT = 8883
 # '#' = wildcard, get all topics
 SUBSCRIBE_TOPIC = "building/floor1/room1/#"
+CA_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "certs", "ca.crt")
 
 
 def now_str():
@@ -34,10 +36,15 @@ def on_message(client, userdata, msg):
 
 
 def main():
+    if not os.path.exists(CA_CERT):
+        print(f"[{now_str()}] CA certificate not found: {CA_CERT}")
+        return
+    
     client = mqtt.Client(client_id="test-subscriber")
     client.on_connect = on_connect
     client.on_message = on_message
-
+    client.tls_set(ca_certs=CA_CERT)
+    
     try:
         client.connect(BROKER, PORT, keepalive=60)
     except Exception as e:
