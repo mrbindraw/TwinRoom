@@ -1,0 +1,4 @@
+[submodule "Plugins/MQTT"]
+	path = Plugins/MQTT
+	url = https://github.com/mrbindraw/UnrealEngine.git
+	branch = feature-mqtt-tls-5.7
