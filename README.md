@@ -5,7 +5,6 @@ On the project map, the cube changes color and displays the room's status as tex
 
 ## Dependencies:
 - Unreal Engine 5.7
-- [VaRest UE plugin from fab.com](https://www.fab.com/listings/5b751595-fe3e-4e85-b217-9b5496ab6d3f)
 - Python 3+
 - [Mosquitto, MQTT-broker](https://mosquitto.org/)
 
