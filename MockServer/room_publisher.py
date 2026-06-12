@@ -64,8 +64,8 @@ def on_connect(client, userdata, flags, rc, properties=None):
         print(f"[{now_str()}] Connection failed (code {rc})")
 
 
-def on_disconnect(client, userdata, rc, properties=None):
-    print(f"[{now_str()}] Disconnected from broker (code {rc})")
+def on_disconnect(client, userdata, disconnect_flags, reason_code, properties=None):
+    print(f"[{now_str()}] Disconnected from broker (code {reason_code})")
 
 
 def main():
