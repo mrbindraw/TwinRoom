@@ -21,3 +21,6 @@ certs/
 
 # MQTT broker password file (generated locally by make_users.sh)
 passwd
+
+*.log
+*.db
