@@ -34,7 +34,13 @@ PASSWORD = os.getenv("SENSOR_PASSWORD")
 
 last = {"temperature": None, "occupancy": None, "lamp": None}
 
-# lamp logic: stays on while the room is occupied, and then LAMP_TIMEOUT seconds after
+# Occupancy cycle: the room is occupied for OCCUPIED_DURATION seconds,
+# then stays empty for EMPTY_DURATION seconds.
+# The lamp stays on while occupied and for LAMP_TIMEOUT seconds after the room
+# empties. EMPTY_DURATION must be greater than LAMP_TIMEOUT, otherwise the room
+# gets re-occupied before the timeout expires and the lamp never turns off.
+OCCUPIED_DURATION = 10.0
+EMPTY_DURATION = 30.0
 LAMP_TIMEOUT = 20.0
 last_occupied_time = 0.0
 
@@ -52,7 +58,7 @@ def log_change(param, old, new):
         print(f"[{ts}] Occupancy:   {status}")
     elif param == "lamp":
         extra = "" if new else "  (timeout after empty)"
-        print(f"[{ts}] Lamp:        {('OFF' if old else 'ON')} → {('ON' if new else 'OFF')}{extra}")
+        print(f"[{ts}] Lamp:        {('ON' if old else 'OFF')} → {('ON' if new else 'OFF')}{extra}")
 
 
 # ---- Callbacks ----
@@ -102,7 +108,7 @@ def main():
             t = time.time() - start
 
             temperature = round(22 + 2 * math.sin(t / 30) + random.uniform(-0.2, 0.2), 1)
-            occupancy = (int(t / 10) % 2 == 0) # switches every 10 sec
+            occupancy = (t % (OCCUPIED_DURATION + EMPTY_DURATION)) < OCCUPIED_DURATION
 
             if occupancy:
                 last_occupied_time = t
