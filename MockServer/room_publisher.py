@@ -1,22 +1,23 @@
 """
 room_publisher.py
 -----------------
-building/floor1/room1/temperature   -> temp, °C
-building/floor1/room1/occupancy     -> "true" / "false"
-building/floor1/room1/lamp          -> "true" / "false"
+Publishes the full room state as a single JSON message:
+
+    building/floor1/room1/state -> {"temperature": 23.4, "occupancy": true, "lamp": true, "timestamp": "..."}
 
 Launch:
-    1) mosquitto -v
+    1) mosquitto -c mosquitto.conf -v
     2) python room_publisher.py
 """
 
 import paho.mqtt.client as mqtt
+import json
 import random
 import time
 import math
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 # Load secrets and settings from .env into environment variables
@@ -24,7 +25,7 @@ load_dotenv()
 
 BROKER = os.getenv("MQTT_BROKER", "localhost")
 PORT = int(os.getenv("MQTT_PORT", "8883"))
-BASE_TOPIC = "building/floor1/room1"
+STATE_TOPIC = "building/floor1/room1/state"
 PUBLISH_INTERVAL = 2.0 # sec
 CA_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "certs", "ca.crt")
 
@@ -50,7 +51,6 @@ def log_change(param, old, new):
         status = "OCCUPIED" if new else "EMPTY"
         print(f"[{ts}] Occupancy:   {status}")
     elif param == "lamp":
-        state = "ON" if new else "OFF"
         extra = "" if new else "  (timeout after empty)"
         print(f"[{ts}] Lamp:        {('OFF' if old else 'ON')} → {('ON' if new else 'OFF')}{extra}")
 
@@ -59,7 +59,7 @@ def log_change(param, old, new):
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
         print(f"[{now_str()}] Connected over TLS as '{USERNAME}' to {BROKER}:{PORT}")
-        print(f"[{now_str()}] Publishing to: {BASE_TOPIC}/<parameter> every {PUBLISH_INTERVAL}s\n")
+        print(f"[{now_str()}] Publishing JSON to: {STATE_TOPIC} every {PUBLISH_INTERVAL}s\n")
     else:
         print(f"[{now_str()}] Connection failed (code {rc})")
 
@@ -74,16 +74,15 @@ def main():
         print(f"[{now_str()}] Missing credentials. Copy .env.example to .env and set "
               f"SENSOR_USERNAME / SENSOR_PASSWORD.")
         sys.exit(1)
-    
+
     if not os.path.exists(CA_CERT):
         print(f"[{now_str()}] CA certificate not found: {CA_CERT}")
         return
-    
+
     client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2, client_id="room1-sensor-sim")
-    #client = mqtt.Client()
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
-    
+
     client.username_pw_set(USERNAME, PASSWORD)
     client.tls_set(ca_certs=CA_CERT)
 
@@ -91,7 +90,7 @@ def main():
         client.connect(BROKER, PORT, keepalive=60)
     except Exception as e:
         print(f"[{now_str()}] Could not connect to broker: {e}")
-        print("Please, check:  mosquitto -v")
+        print("Please, check:  mosquitto -c mosquitto.conf -v")
         return
 
     client.loop_start()
@@ -112,9 +111,13 @@ def main():
                 # the lamp is still on for LAMP_TIMEOUT seconds after release
                 lamp = (t - last_occupied_time) < LAMP_TIMEOUT
 
-            client.publish(f"{BASE_TOPIC}/temperature", str(temperature), qos=1, retain=True)
-            client.publish(f"{BASE_TOPIC}/occupancy", str(occupancy).lower(), qos=1, retain=True)
-            client.publish(f"{BASE_TOPIC}/lamp", str(lamp).lower(), qos=1, retain=True)
+            state = {
+                "temperature": temperature,
+                "occupancy": occupancy,
+                "lamp": lamp,
+                "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            }
+            client.publish(STATE_TOPIC, json.dumps(state), qos=1, retain=True)
 
             # --- print logs ---
             if last["temperature"] is not None and abs(temperature - last["temperature"]) > 0.2:
