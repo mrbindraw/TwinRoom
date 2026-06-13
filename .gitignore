@@ -10,3 +10,17 @@ Intermediate
 Saved
 Build
 .DS_Store
+certs/
+*.crt
+*.csr
+*.key
+*.srl
+
+# Secrets never commit!
+.env
+
+# MQTT broker password file (generated locally by make_users.sh)
+passwd
+
+*.log
+*.db

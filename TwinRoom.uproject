@@ -19,7 +19,7 @@
 			]
 		},
 		{
-			"Name": "VaRest",
+			"Name": "MQTT",
 			"Enabled": true
 		}
 	]
