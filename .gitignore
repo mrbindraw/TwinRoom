@@ -24,3 +24,6 @@ passwd
 
 *.log
 *.db
+
+Version.ini
+DefaultProjectVersionGitSettings.ini
