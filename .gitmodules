@@ -2,3 +2,9 @@
 	path = Plugins/MQTT
 	url = https://github.com/mrbindraw/UnrealEngine.git
 	branch = feature-mqtt-tls-5.7
+[submodule "Plugins/CheckAppInstance"]
+	path = Plugins/CheckAppInstance
+	url = https://github.com/mrbindraw/CheckAppInstance
+[submodule "Plugins/ProjectVersionFromGit"]
+	path = Plugins/ProjectVersionFromGit
+	url = https://github.com/mrbindraw/ProjectVersionFromGit
