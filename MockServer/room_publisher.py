@@ -27,7 +27,16 @@ BROKER = os.getenv("MQTT_BROKER", "localhost")
 PORT = int(os.getenv("MQTT_PORT", "8883"))
 STATE_TOPIC = "building/floor1/room1/state"
 PUBLISH_INTERVAL = 2.0 # sec
-CA_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "certs", "ca.crt")
+
+# Get the directory where the .exe was actually launched
+if getattr(sys, 'frozen', False):
+    # Running as a compiled .exe
+    LAUNCH_DIR = os.path.dirname(sys.executable)
+else:
+    # Running as a normal .py script
+    LAUNCH_DIR = os.path.dirname(os.path.abspath(__file__))
+
+CA_CERT = os.path.join(LAUNCH_DIR, "certs", "ca.crt")
 
 USERNAME = os.getenv("SENSOR_USERNAME")
 PASSWORD = os.getenv("SENSOR_PASSWORD")
