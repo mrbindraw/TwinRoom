@@ -27,3 +27,8 @@ passwd
 
 Version.ini
 DefaultProjectVersionGitSettings.ini
+
+dist/
+*.spec
+*.exe
+*.dll
