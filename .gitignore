@@ -27,6 +27,8 @@ passwd
 
 Version.ini
 DefaultProjectVersionGitSettings.ini
+DefaultCrypto.ini
+Certificates/
 
 dist/
 *.spec
