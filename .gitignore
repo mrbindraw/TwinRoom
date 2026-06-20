@@ -24,3 +24,13 @@ passwd
 
 *.log
 *.db
+
+Version.ini
+DefaultProjectVersionGitSettings.ini
+DefaultCrypto.ini
+Certificates/
+
+dist/
+*.spec
+*.exe
+*.dll
